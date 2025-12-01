@@ -1,7 +1,7 @@
 FROM ubuntu:20.04
 
 # Set environment variables
-ENV HADOOP_VERSION=3.3.1
+ENV HADOOP_VERSION=3.3.6
 ENV HADOOP_HOME=/opt/hadoop
 ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 ENV PATH=$PATH:$HADOOP_HOME/bin:$JAVA_HOME/bin
@@ -15,11 +15,11 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     sshpass \
     && rm -rf /var/lib/apt/lists/*
 
-# Download and extract Hadoop
-RUN wget https://archive.apache.org/dist/hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz \
-    && tar -xzf hadoop-$HADOOP_VERSION.tar.gz -C /opt/ \
+# Download and extract Hadoop (Đã cập nhật link và phiên bản 3.3.6)
+RUN wget https://dlcdn.apache.org/hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz -P /tmp \
+    && tar -xzf /tmp/hadoop-$HADOOP_VERSION.tar.gz -C /opt/ \
     && mv /opt/hadoop-$HADOOP_VERSION $HADOOP_HOME \
-    && rm hadoop-$HADOOP_VERSION.tar.gz
+    && rm /tmp/hadoop-$HADOOP_VERSION.tar.gz
 
 # Configure Hadoop (nếu có file config)
 COPY config/* $HADOOP_HOME/etc/hadoop/
@@ -42,4 +42,3 @@ RUN mkdir -p /root/.ssh \
 
 # Start the startup script when container runs
 CMD ["bash", "/opt/hadoop/setup-hadoop.sh"]
-

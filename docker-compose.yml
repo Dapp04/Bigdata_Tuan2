@@ -1,31 +1,44 @@
 version: '3.8'
 
 services:
+  # DỊCH VỤ 1: HADOOP (NAMENODE)
   hadoop:
     build:
       dockerfile: Dockerfile
       context: ./docker/hadoop
+    hostname: namenode
     volumes:
       - hadoop_data:/usr/local/hadoop/data
     networks:
       - hadoop_network
     ports:
       - "9870:9870"
-      - "50070:50070"
+      - "50070:50070" 
+    # Khởi động NameNode/DataNode
+    command: bash /opt/hadoop/setup-hadoop.sh
 
+  # DỊCH VỤ 2: YARN (RESOURCE MANAGER) - Bổ sung ENVIRONMENT
   yarn:
     build:
       dockerfile: Dockerfile
       context: ./docker/yarn
     depends_on:
       - hadoop
+    hostname: resourcemanager
     volumes:
       - yarn_data:/usr/local/yarn/data
     networks:
       - hadoop_network
     ports:
       - "8088:8088"
+    # === BỔ SUNG JAVA_HOME VÀO ENV CỦA DỊCH VỤ ===
+    environment:
+      # Cần OpenJDK 8 cho YARN theo Dockerfile gốc của bạn
+      JAVA_HOME: /usr/lib/jvm/java-8-openjdk-amd64
+    # Chạy setup-yarn.sh, sau đó khởi động YARN
+    command: bash -c "/usr/local/bin/setup-yarn.sh && /usr/local/hadoop/sbin/start-yarn.sh && tail -f /dev/null"
 
+  # DỊCH VỤ 3: SPARK (MASTER)
   spark:
     build:
       dockerfile: Dockerfile
@@ -33,16 +46,26 @@ services:
     depends_on:
       - hadoop
       - yarn
+    hostname: sparkmaster
     volumes:
       - spark_data:/usr/local/spark/data
     networks:
       - hadoop_network
     ports:
       - "8080:8080"
+    # === BỔ SUNG JAVA_HOME VÀO ENV CỦA DỊCH VỤ ===
+    environment:
+      # Cần OpenJDK 8 cho Spark
+      JAVA_HOME: /usr/lib/jvm/java-8-openjdk-amd64 
+    # Chạy script setup Spark, khởi động Master và giữ container chạy.
+    command: bash -c "/opt/spark/setup-spark.sh && $SPARK_HOME/bin/spark-class org.apache.spark.deploy.master.Master && tail -f /dev/null"
 
+# ĐỊNH NGHĨA MẠNG
 networks:
   hadoop_network:
+    name: hadoop-spark-net
 
+# ĐỊNH NGHĨA VOLUMES
 volumes:
   hadoop_data:
   yarn_data:
