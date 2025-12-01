@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  hadoop:
+    build:
+      dockerfile: Dockerfile
+      context: ./docker/hadoop
+    volumes:
+      - hadoop_data:/usr/local/hadoop/data
+    networks:
+      - hadoop_network
+    ports:
+      - "9870:9870"
+      - "50070:50070"
+
+  yarn:
+    build:
+      dockerfile: Dockerfile
+      context: ./docker/yarn
+    depends_on:
+      - hadoop
+    volumes:
+      - yarn_data:/usr/local/yarn/data
+    networks:
+      - hadoop_network
+    ports:
+      - "8088:8088"
+
+  spark:
+    build:
+      dockerfile: Dockerfile
+      context: ./docker/spark
+    depends_on:
+      - hadoop
+      - yarn
+    volumes:
+      - spark_data:/usr/local/spark/data
+    networks:
+      - hadoop_network
+    ports:
+      - "8080:8080"
+
+networks:
+  hadoop_network:
+
+volumes:
+  hadoop_data:
+  yarn_data:
+  spark_data:
